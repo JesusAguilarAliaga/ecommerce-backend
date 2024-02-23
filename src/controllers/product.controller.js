@@ -3,7 +3,13 @@ const Product = require("../models/Product");
 const catchError = require("../utils/catchError")
 
 const getAllProducts = catchError(async (req, res) => {
-    const products = await Product.findAll({ include: [Category]});
+    const { category } = req.query;
+    let where = {}
+
+    if(category) where = { categoryId: category }
+
+
+    const products = await Product.findAll({ include: [Category], where });
 
     return res.send(products);
 })
@@ -12,7 +18,7 @@ const getOneProduct = catchError(async (req, res) => {
     const { id } = req.params
     const product = await Product.findByPk(id);
 
-    if(!product) return res.send("Product not found").status(404);
+    if (!product) return res.send("Product not found").status(404);
 
 
     return res.json(product)
@@ -28,9 +34,9 @@ const createProduct = catchError(async (req, res) => {
 const deleteProduct = catchError(async (req, res) => {
     const { id } = req.params;
 
-    const productDeleted = await Product.destroy({ where: {id}})
+    const productDeleted = await Product.destroy({ where: { id } })
 
-    if(!productDeleted) return res.send("Product not found").status(404);
+    if (!productDeleted) return res.send("Product not found").status(404);
 
     return res.status(204).send("Product deleted")
 })
@@ -40,7 +46,7 @@ const updateProduct = catchError(async (req, res) => {
 
     const productId = await Product.findByPk(id)
 
-    if(!productId) return res.status(404).send("Product not found")
+    if (!productId) return res.status(404).send("Product not found")
 
     const productUpdated = await Product.update(req.body, {
         where: { id },

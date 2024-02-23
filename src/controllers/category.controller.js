@@ -12,7 +12,7 @@ const createCategory = catchError(async (req, res) => {
 
     const categoryCreated = await Category.create(req.body)
 
-    return res.json(categoryCreated)
+    return res.status(201).json(categoryCreated)
 })
 
 const deleteCategory = catchError(async (req, res) => {

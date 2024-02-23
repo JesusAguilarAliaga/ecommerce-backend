@@ -1,102 +1,68 @@
+const Category = require("../models/Category");
+const Product = require("../models/Product");
 const catchError = require("../utils/catchError")
 
 const getAllProducts = catchError(async (req, res) => {
-    const users = await User.findAll();
+    const products = await Product.findAll({ include: [Category]});
 
-    User.prototype.toJSON = function () {
-        const values = { ...this.get() };
-        delete values.password;
-        return values;
-    };
-
-    return res.send(users);
+    return res.send(products);
 })
 
 const getOneProduct = catchError(async (req, res) => {
     const { id } = req.params
-    const result = await User.findByPk(id);
+    const product = await Product.findByPk(id);
 
-    if(!result) return res.send("User not found").status(404);
+    if(!product) return res.send("Product not found").status(404);
 
-    User.prototype.toJSON = function () {
-        const values = { ...this.get() };
-        delete values.password;
-        return values;
-    };
 
-    return res.json(result)
+    return res.json(product)
 })
 
 const createProduct = catchError(async (req, res) => {
-    const { password, email, firstName, frontBaseUrl } = req.body
 
-    //hash password
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const productCreated = await Product.create(req.body)
 
-    const newBody = {
-        ...req.body,
-        password: hashedPassword
-    }
-
-    const userCreated = await User.create(newBody)
-
-    User.prototype.toJSON = function () {
-        const values = { ...this.get() };
-        delete values.password;
-        return values;
-    };
-
-    //generate code to verify from email
-    const code = crypto.randomBytes(64).toString("hex");
-
-    const bodyCode = {
-        code,
-        userId: userCreated.id
-    }
-
-    await EmailCode.create(bodyCode)
-
-    sendEmail({
-        to: email,
-        subject: "Verify your email",
-        html: `<a href="${frontBaseUrl}/verify_email/${code}">Verify your email</a>`
-    })
-
-    return res.json(userCreated)
+    return res.status(201).json(productCreated)
 })
 
 const deleteProduct = catchError(async (req, res) => {
     const { id } = req.params;
 
-    const userDeleted = await User.destroy({ where: {id}})
+    const productDeleted = await Product.destroy({ where: {id}})
 
-    if(!userDeleted) return res.send("User not found").status(404);
+    if(!productDeleted) return res.send("Product not found").status(404);
 
-    return res.send("User deleted")
+    return res.status(204).send("Product deleted")
 })
 
 const updateProduct = catchError(async (req, res) => {
     const { id } = req.params;
 
-    const idUser = await User.findByPk(id)
+    const productId = await Product.findByPk(id)
 
-    if(!idUser) return res.status(404).send("User not found")
+    if(!productId) return res.status(404).send("Product not found")
 
-    const fieldsToDelete = ["email", "password", "isVerified"]
-
-    fieldsToDelete.forEach(field => {
-        delete req.body[field]
-    })
-
-    const userUpdated = await User.update(req.body, {
+    const productUpdated = await Product.update(req.body, {
         where: { id },
         returning: true
     })
 
-    if(userUpdated[0] === 0) return res.sendStatus(400)
 
-    return res.json(userUpdated[1][0])
+    return res.json(productUpdated[1][0])
 })
+
+
+// product/id/img
+/* const setProductImg = catchError(async (req, res) => {
+    const { id } = req.params;
+
+    const product = await Product.findByPk(id)
+    if(!product) return res.status(404).send("Product not found")
+
+    await
+
+}) */
+
 
 
 module.exports = {

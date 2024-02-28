@@ -1,6 +1,7 @@
 const Cart = require("../models/Cart")
 const Category = require("../models/Category")
 const Product = require("../models/Product")
+const ProductImg = require("../models/ProductImg")
 const User = require("../models/User")
 const catchError = require("../utils/catchError")
 
@@ -13,12 +14,32 @@ const getAllCarts = catchError(async (req, res) => {
         include: [{
             model: Product,
             attributes: { exclude: ["createdAt", "updatedAt"] },
-            include: {
+            include: [{
                 model: Category,
                 attributes: ["name"]
-            }
+            }]
         }]
     })
+
+    return res.json(cart)
+})
+
+const getOneCart = catchError(async (req, res) => {
+    const { id } = req.params
+    const userId = req.user.id
+
+    const cart = await Cart.findByPk(id, {
+        where: {userId},
+        include: [{
+            model: Product,
+            attributes: { exclude: ["createdAt", "updatedAt"] },
+            include: [{
+                model: ProductImg,
+            }]
+        }]
+    })
+
+    if (!cart) return res.status(404).send("Cart not found")
 
     return res.json(cart)
 })
@@ -68,5 +89,6 @@ module.exports = {
     getAllCarts,
     createCarts,
     updateCart,
-    deleteCart
+    deleteCart,
+    getOneCart
 }

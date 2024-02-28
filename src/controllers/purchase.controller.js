@@ -1,6 +1,7 @@
 const Cart = require("../models/Cart")
 const Category = require("../models/Category")
 const Product = require("../models/Product")
+const ProductImg = require("../models/ProductImg")
 const Purchase = require("../models/Purchase")
 const User = require("../models/User")
 const catchError = require("../utils/catchError")
@@ -12,7 +13,13 @@ const getAllPurchases = catchError(async (req, res) => {
         where: { userId },
         include: [{
             model: Product,
-            include: Category
+            attributes: { exclude: ["createdAt", "updatedAt"] },
+            include: [{
+                model: Category,
+                attributes: ["name"]
+            }, {
+                model: ProductImg
+            }]
         }]
     })
 

@@ -1,13 +1,14 @@
 const supertest = require("supertest")
 const app = require("../app")
+const Product = require("../models/Product")
+require("../models")
 
 const request = supertest(app)
 
-const BASE_URL = "/purchases"
+const BASE_URL = "/purchase"
 let token
-let categoryId
-let productId
-let cartId
+let userId
+let product
 
 beforeAll(async () => {
     const user = {
@@ -20,35 +21,21 @@ beforeAll(async () => {
         .send(user)
 
     token = res.body.token
+    userId = res.body.user.id
 
-    const category = await request
-        .post("/categories")
-        .send({ name: "Electrocs" })
-        .set("Authorization", `Bearer ${token}`)
+    product = await Product.create({
+        title: "Tv LG opur",
+        description: "Tv LG 32 pulgadas",
+        price: "20000"
+    })
 
-    categoryId = category.body.id
-
-    const product = await request
-        .post("/products")
-        .send({
-            title: "Tv LG",
-            description: "Tv LG 32 pulgadas",
-            price: "20000",
-            categoryId: categoryId
-        })
-        .set("Authorization", `Bearer ${token}`)
-
-    productId = product.body.id
-
-    const cart = await request
-        .post("/carts")
+    await request
+        .post("/cart")
         .send({
             quantity: 1,
-            productId
+            productId: product.id
         })
         .set("Authorization", `Bearer ${token}`)
-
-    cartId = cart.body.id
 })
 
 test("POST '/puchases' should return status 201, 'res.body' to be defined and 'res.body.quantity' should be equal to '1'", async() => {
@@ -66,9 +53,9 @@ test("GET '/purchases' should return status 200, 'res.body' to be defined and 'r
         .get(BASE_URL)
         .set("Authorization", `Bearer ${token}`)
 
-        console.log(res.body)
-
     expect(res.status).toBe(200)
     expect(res.body).toBeDefined()
     expect(res.body).toHaveLength(1)
+
+    await product.destroy()
 })

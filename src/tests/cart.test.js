@@ -1,12 +1,12 @@
 const supertest = require("supertest")
 const app = require("../app")
+const Product = require("../models/Product")
 require("../models")
 
 const request = supertest(app)
-const BASE_URL = "/carts"
+const BASE_URL = "/cart"
 let token
-let productId
-let categoryId
+let product
 let cartId
 
 beforeAll(async () => {
@@ -21,32 +21,19 @@ beforeAll(async () => {
 
     token = login.body.token
 
-    const category = await request
-        .post("/categories")
-        .send({ name: "Electrocs" })
-        .set("Authorization", `Bearer ${token}`)
-
-    categoryId = category.body.id
-
-    const product = await request
-        .post("/products")
-        .send({
-            title: "Tv LG",
-            description: "Tv LG 32 pulgadas",
-            price: "20000",
-            categoryId: categoryId
-        })
-        .set("Authorization", `Bearer ${token}`)
-
-    productId = product.body.id
+    product = await Product.create({
+        title: "Tv LG1312",
+        description: "Tv LG 32 pulgadas",
+        price: "20000"
+    })
 })
 
-test("POST '/carts' should return status 201, 'res.body' should be defined and 'res.body.quantity' should be equal to '1'", async () => {
+test("POST '/cart' should return status 201, 'res.body' should be defined and 'res.body.quantity' should be equal to '1'", async () => {
     const res = await request
         .post(BASE_URL)
         .send({
             quantity: 1,
-            productId
+            productId: product.id
         })
         .set("Authorization", `Bearer ${token}`)
 
@@ -57,7 +44,7 @@ test("POST '/carts' should return status 201, 'res.body' should be defined and '
     expect(res.body.quantity).toBe(1)
 })
 
-test("GET '/carts' should return status 200, 'res.body' should be defined and 'res.body' length should be equal to '1'", async () => {
+test("GET '/cart' should return status 200, 'res.body' should be defined and 'res.body' length should be equal to '1'", async () => {
     const res = await request
         .get(BASE_URL)
         .set("Authorization", `Bearer ${token}`)
@@ -67,23 +54,32 @@ test("GET '/carts' should return status 200, 'res.body' should be defined and 'r
     expect(res.body).toHaveLength(1)
 })
 
-test("UPDATE '/carts/:id' should return status 200, 'res.body' should be defined and 'res.body.quantity' should be equal to '2'", async () => {
+test("GET '/cart/:id' should return status 200, 'res.body' should be defined and 'res.body.quantity' should be equal to '1'", async () => {
+    const res = await request
+        .get(`${BASE_URL}/${cartId}`)
+        .set("Authorization", `Bearer ${token}`)
+
+    expect(res.status).toBe(200)
+    expect(res.body).toBeDefined()
+    expect(res.body.quantity).toBe(1)
+})
+
+test("UPDATE '/cart/:id' should return status 200, 'res.body' should be defined and 'res.body.quantity' should be equal to '2'", async () => {
     const res = await request
         .put(`${BASE_URL}/${cartId}`)
         .send({ quantity: 2 })
         .set("Authorization", `Bearer ${token}`)
 
-
-    console.log(res.body)
     expect(res.status).toBe(200)
     expect(res.body).toBeDefined()
     expect(res.body.quantity).toBe(2)
 })
 
-test("DELETE '/carts/:id' should return status 204", async () => {
+test("DELETE '/cart/:id' should return status 204", async () => {
     const res = await request
         .delete(`${BASE_URL}/${cartId}`)
         .set("Authorization", `Bearer ${token}`)
 
     expect(res.status).toBe(204)
+    await product.destroy()
 })
